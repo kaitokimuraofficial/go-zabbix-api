@@ -12,32 +12,6 @@ type Macro struct {
 // Macros is an array of Macro
 type Macros []Macro
 
-// MacrosGet Wrapper for usermacro.get
-// https://www.zabbix.com/documentation/3.2/manual/api/reference/usermacro/get
-func (api *API) MacrosGet(params Params) (res Macros, err error) {
-	if _, present := params["output"]; !present {
-		params["output"] = "extend"
-	}
-	err = api.CallWithErrorParse("usermacro.get", params, &res)
-	return
-}
-
-// MacroGetByID Get macro by macro ID if there is exactly 1 matching macro
-func (api *API) MacroGetByID(id string) (res *Macro, err error) {
-	triggers, err := api.MacrosGet(Params{"hostmacroids": id})
-	if err != nil {
-		return
-	}
-
-	if len(triggers) == 1 {
-		res = &triggers[0]
-	} else {
-		e := ExpectedOneResult(len(triggers))
-		err = &e
-	}
-	return
-}
-
 // MacrosCreate Wrapper for usermacro.create
 // https://www.zabbix.com/documentation/3.2/manual/api/reference/usermacro/create
 func (api *API) MacrosCreate(macros Macros) error {
