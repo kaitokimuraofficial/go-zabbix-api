@@ -1,66 +1,93 @@
 package zabbix
 
-// Macro represent Zabbix User MAcro object
-// https://www.zabbix.com/documentation/3.2/manual/api/reference/usermacro/object
-type Macro struct {
-	MacroID   string `json:"hostmacroids,omitempty"`
-	HostID    string `json:"hostid,omitempty"`
-	MacroName string `json:"macro"`
-	Value     string `json:"value"`
+// GlobalMacro represent Zabbix global User Macro object
+// https://www.zabbix.com/documentation/7.0/manual/api/reference/usermacro/object
+type GlobalMacro struct {
+	MacroID     string `json:"globalmacroid,omitempty"`
+	MacroName   string `json:"macro"`
+	Value       string `json:"value"`
+	Description string `json:"description,omitempty"`
 }
 
-// Macros is an array of Macro
-type Macros []Macro
+// GlobalMacros is an array of GlobalMacro
+type GlobalMacros []GlobalMacro
 
-// MacrosCreate Wrapper for usermacro.create
-// https://www.zabbix.com/documentation/3.2/manual/api/reference/usermacro/create
-func (api *API) MacrosCreate(macros Macros) error {
-	response, err := api.CallWithError("usermacro.create", macros)
+// GlobalMacrosGet Wrapper for usermacro.get
+// https://www.zabbix.com/documentation/7.0/manual/api/reference/usermacro/get
+func (api *API) GlobalMacrosGet(params Params) (res GlobalMacros, err error) {
+	if _, present := params["output"]; !present {
+		params["output"] = "extend"
+	}
+	params["globalmacro"] = true
+	err = api.CallWithErrorParse("usermacro.get", params, &res)
+	return
+}
+
+// GlobalMacroGetByID Get macro by macro ID if there is exactly 1 matching macro
+func (api *API) GlobalMacroGetByID(id string) (res *GlobalMacro, err error) {
+	macros, err := api.GlobalMacrosGet(Params{"globalmacroids": id})
+	if err != nil {
+		return
+	}
+
+	if len(macros) == 1 {
+		res = &macros[0]
+	} else {
+		e := ExpectedOneResult(len(macros))
+		err = &e
+	}
+	return
+}
+
+// GlobalMacrosCreate Wrapper for usermacro.createglobal
+// https://www.zabbix.com/documentation/7.0/manual/api/reference/usermacro/createglobal
+func (api *API) GlobalMacrosCreate(globalmacros GlobalMacros) error {
+	response, err := api.CallWithError("usermacro.createglobal", globalmacros)
 	if err != nil {
 		return err
 	}
 
 	result := response.Result.(map[string]interface{})
-	macroids := result["hostmacroids"].([]interface{})
-	for i, id := range macroids {
-		macros[i].HostID = id.(string)
+	globalmacroids := result["globalmacroids"].([]interface{})
+	for i, id := range globalmacroids {
+		globalmacros[i].MacroID = id.(string)
 	}
 	return nil
 }
 
-// MacrosUpdate Wrapper for usermacro.update
-// https://www.zabbix.com/documentation/3.2/manual/api/reference/usermacro/update
-func (api *API) MacrosUpdate(macros Macros) (err error) {
-	_, err = api.CallWithError("usermacro.create", macros)
+// GlobalMacrosUpdate Wrapper for usermacro.updateglobal
+// https://www.zabbix.com/documentation/7.0/manual/api/reference/usermacro/updateglobal
+func (api *API) GlobalMacrosUpdate(globalmacros GlobalMacros) (err error) {
+	_, err = api.CallWithError("usermacro.updateglobal", globalmacros)
 	return
 }
 
-// MacrosDeleteByIDs Wrapper for usermacro.delete
+// GlobalMacrosDeleteByIDs Wrapper for usermacro.deleteglobal
 // Cleans MacroId in all macro elements if call succeed.
-//https://www.zabbix.com/documentation/3.2/manual/api/reference/usermacro/delete
-func (api *API) MacrosDeleteByIDs(ids []string) (err error) {
-	response, err := api.CallWithError("usermacro.delete", ids)
+// https://www.zabbix.com/documentation/7.0/manual/api/reference/usermacro/deleteglobal
+func (api *API) GlobalMacrosDeleteByIDs(ids []string) (err error) {
+	response, err := api.CallWithError("usermacro.deleteglobal", ids)
 
 	result := response.Result.(map[string]interface{})
-	hostmacroids := result["hostmacroids"].([]interface{})
-	if len(ids) != len(hostmacroids) {
-		err = &ExpectedMore{len(ids), len(hostmacroids)}
+	globalmacroids := result["globalmacroids"].([]interface{})
+	if len(ids) != len(globalmacroids) {
+		err = &ExpectedMore{len(ids), len(globalmacroids)}
 	}
 	return
 }
 
-// MacrosDelete Wrapper for usermacro.delete
-// https://www.zabbix.com/documentation/3.2/manual/api/reference/usermacro/delete
-func (api *API) MacrosDelete(macros Macros) (err error) {
-	ids := make([]string, len(macros))
-	for i, macro := range macros {
-		ids[i] = macro.MacroID
+// GlobalMacrosDelete Wrapper for usermacro.deleteglobal
+// https://www.zabbix.com/documentation/7.0/manual/api/reference/usermacro/deleteglobal
+func (api *API) GlobalMacrosDelete(globalmacros GlobalMacros) (err error) {
+	ids := make([]string, len(globalmacros))
+	for i, globalmacro := range globalmacros {
+		ids[i] = globalmacro.MacroID
 	}
 
-	err = api.MacrosDeleteByIDs(ids)
+	err = api.GlobalMacrosDeleteByIDs(ids)
 	if err == nil {
-		for i := range macros {
-			macros[i].MacroID = ""
+		for i := range globalmacros {
+			globalmacros[i].MacroID = ""
 		}
 	}
 	return
