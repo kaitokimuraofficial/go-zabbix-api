@@ -181,11 +181,7 @@ func (api *API) CallWithErrorParse(method string, params interface{}, result int
 // This method modifies API structure and should not be called concurrently with other methods.
 func (api *API) Login(user, password string) (auth string, err error) {
 	var response Response
-	if api.ServerVersion.GreaterThan(version.Must(version.NewVersion("5.4"))) {
-		response, err = api.CallWithError("user.login", map[string]string{"username": user, "password": password})
-	} else {
-		response, err = api.CallWithError("user.login", map[string]string{"user": user, "password": password})
-	}
+	response, err = api.CallWithError("user.login", map[string]string{"username": user, "password": password})
 
 	if err != nil {
 		return
